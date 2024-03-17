@@ -1,0 +1,59 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.2.3'
+    id "org.openapi.generator" version '7.4.0'
+}
+
+apply plugin: 'io.spring.dependency-management'
+
+group = 'com.openapiexamples'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    sourceCompatibility = '21'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'jakarta.validation:jakarta.validation-api:3.0.2'
+    implementation 'org.hibernate:hibernate-validator:8.0.1.Final'
+    implementation 'org.openapitools:jackson-databind-nullable:0.2.6'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.4.0'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-api:2.4.0'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+compileJava.dependsOn tasks.openApiGenerate
+processResources.dependsOn tasks.openApiGenerate
+
+openApiGenerate {
+    generatorName = "spring"
+    inputSpec = "$rootDir/src/main/resources/static/petstore.yaml".toString()
+    outputDir = "$buildDir/generated/openapi".toString()
+    apiPackage = "com.openapiexamples.petstorespringboot.api"
+    modelPackage = "com.openapiexamples.petstorespringboot.openapi.model"
+    configOptions.set([
+            delegatePattern: 'true',
+            useSpringBoot3 : 'true',
+    ])
+}
+tasks.openApiGenerate {
+    doLast {
+        delete(
+                "$buildDir/generated/openapi/src/main/java/org/openapitools",
+        )
+    }
+}
+
+sourceSets.main.java.srcDirs += "${openApiGenerate.outputDir.get()}/src/main/java"
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
